@@ -9,13 +9,16 @@
 <ul id="test-list"></ul>
 
 <script>
+// 1️⃣ Load all tests from JSON
 fetch('questions.json')
   .then(res => res.json())
   .then(data => {
     const list = document.getElementById('test-list');
-    data.tests.forEach(t => {
+
+    data.tests.forEach(test => {
       const li = document.createElement('li');
-      li.innerHTML = `${t.title} (${t.duration_minutes} min) <a href="test.html?test=${t.id}">Start Test</a>`;
+      // Each test shows title, duration, and a Start Test link
+      li.innerHTML = `${test.title} (${test.duration_minutes} min) <a href="test.html?test=${test.id}">Start Test</a>`;
       list.appendChild(li);
     });
   });
