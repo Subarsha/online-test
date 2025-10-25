@@ -1,1 +1,39 @@
+<!doctype html>
+<html>
+<head>
+    <title>{{ test['title'] }}</title>
+</head>
+<body>
+<h2>{{ test['title'] }}</h2>
+<p>Duration: {{ test['duration_minutes'] }} min</p>
+<div id="questions"></div>
+<button id="submit-btn">Submit</button>
+<div id="result-msg"></div>
+
+<script>
+const data = {id: {{ test['id'] }}, duration: {{ test['duration_minutes'] }}, questions: {{ questions|tojson }}};
+const qDiv = document.getElementById('questions');
+
+data.questions.forEach((q,i)=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<p>${i+1}. ${q.text}</p>`;
+    q.choices.forEach(c=>{
+        const input = document.createElement('input');
+        input.type = q.qtype=='multiple'?'checkbox':'radio';
+        input.name = 'q_'+q.id;
+        input.value = c.id;
+        div.appendChild(input);
+        div.appendChild(document.createTextNode(' '+c.text));
+        div.appendChild(document.createElement('br'));
+    });
+    qDiv.appendChild(div);
+});
+
+// Timer
+const endTime = Date.now()+data.duration*60*1000;
+function updateTimer(){const t=endTime-Date.now();if(t<=0){alert('Time is up!');return;}setTimeout(updateTimer,1000);}
+updateTimer();
+</script>
+</body>
+</html>
 
