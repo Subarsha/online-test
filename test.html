@@ -1,39 +1,81 @@
 <!doctype html>
 <html>
 <head>
-    <title>{{ test['title'] }}</title>
+    <meta charset="utf-8">
+    <title>Online Test</title>
 </head>
 <body>
-<h2>{{ test['title'] }}</h2>
-<p>Duration: {{ test['duration_minutes'] }} min</p>
+<h1 id="test-title"></h1>
+<p>Time left: <span id="timer"></span> minutes</p>
+
 <div id="questions"></div>
 <button id="submit-btn">Submit</button>
 <div id="result-msg"></div>
 
 <script>
-const data = {id: {{ test['id'] }}, duration: {{ test['duration_minutes'] }}, questions: {{ questions|tojson }}};
-const qDiv = document.getElementById('questions');
+// 1️⃣ Get the test ID from the URL
+function getQueryParam(name) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+const testId = parseInt(getQueryParam('test'));
 
-data.questions.forEach((q,i)=>{
-    const div = document.createElement('div');
-    div.innerHTML = `<p>${i+1}. ${q.text}</p>`;
-    q.choices.forEach(c=>{
+// 2️⃣ Load questions from JSON
+fetch('questions.json')
+  .then(res => res.json())
+  .then(data => {
+    const test = data.tests.find(t => t.id === testId);
+    if(!test) { alert("Test not found"); return; }
+
+    // Show title and duration
+    document.getElementById('test-title').textContent = test.title;
+
+    // Display questions
+    const qDiv = document.getElementById('questions');
+    test.questions.forEach((q,i) => {
+      const div = document.createElement('div');
+      div.innerHTML = `<p>${i+1}. ${q.text}</p>`;
+      q.choices.forEach(c => {
         const input = document.createElement('input');
-        input.type = q.qtype=='multiple'?'checkbox':'radio';
-        input.name = 'q_'+q.id;
+        input.type = q.qtype === 'multiple' ? 'checkbox' : 'radio';
+        input.name = 'q_' + q.id;
         input.value = c.id;
         div.appendChild(input);
-        div.appendChild(document.createTextNode(' '+c.text));
+        div.appendChild(document.createTextNode(' ' + c.text));
         div.appendChild(document.createElement('br'));
+      });
+      qDiv.appendChild(div);
     });
-    qDiv.appendChild(div);
-});
 
-// Timer
-const endTime = Date.now()+data.duration*60*1000;
-function updateTimer(){const t=endTime-Date.now();if(t<=0){alert('Time is up!');return;}setTimeout(updateTimer,1000);}
-updateTimer();
+    // 3️⃣ Countdown timer
+    let time = test.duration_minutes * 60;
+    const timerEl = document.getElementById('timer');
+    function updateTimer() {
+      let min = Math.floor(time / 60);
+      let sec = time % 60;
+      timerEl.textContent = `${min}:${sec < 10 ? '0'+sec : sec}`;
+      if(time <= 0) { submitAnswers(); return; }
+      time--;
+      setTimeout(updateTimer, 1000);
+    }
+    updateTimer();
+
+    // 4️⃣ Submit answers
+    document.getElementById('submit-btn').addEventListener('click', submitAnswers);
+    function submitAnswers() {
+      let score = 0;
+      test.questions.forEach(q => {
+        const selected = Array.from(document.querySelectorAll(`input[name="q_${q.id}"]:checked`)).map(i => parseInt(i.value));
+        const correct = q.choices.filter(c => c.is_correct).map(c => c.id);
+        if(q.qtype === 'single') {
+          if(selected[0] === correct[0]) score++;
+        } else {
+          if(selected.sort().toString() === correct.sort().toString()) score++;
+        }
+      });
+      document.getElementById('result-msg').textContent = `Score: ${score} / ${test.questions.length}`;
+    }
+  });
 </script>
 </body>
 </html>
-
