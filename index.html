@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Online Test</title>
+</head>
+<body>
+<h1>Available Tests</h1>
+<ul id="test-list"></ul>
+
+<script>
+fetch('questions.json')
+  .then(res => res.json())
+  .then(data => {
+    const list = document.getElementById('test-list');
+    data.tests.forEach(t => {
+      const li = document.createElement('li');
+      li.innerHTML = `${t.title} (${t.duration_minutes} min) <a href="test.html?test=${t.id}">Start Test</a>`;
+      list.appendChild(li);
+    });
+  });
+</script>
+</body>
+</html>
